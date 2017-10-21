@@ -7,7 +7,7 @@ clingo.config({ // Sets the basic configuration for this clingo instance
 });
 
 clingo.solve({
-    inputFiles: ['choice.lp']
+    inputFiles: ['initial_generation.lp']
 })
     .on('model', function(model) {
         // Here 'model' is an Array of strings representing the atoms of the model
