@@ -19,6 +19,6 @@ influential(X, FX),
 opinion(X, I, SX, T), opinion(Y, I, SY, T),
 tick(T).
 
-#show opinion/4.
-#show talk/3.
-#show atLocation/3.
+%#show opinion/4.
+%#show talk/3.
+%#show atLocation/3.
