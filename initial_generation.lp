@@ -1,4 +1,4 @@
-%Use command clingo -n 1 initial_generation.lp --seed=%RANDOM% --rand-freq=0 --sign-def=rnd
+%Use command clingo -n 1 initial_generation.lp --seed=%RANDOM% --rand-freq=1 --sign-def=rnd
 
 %CONSTANTS%
 terrain(forest; grassland; riverbank; hills; desert).
