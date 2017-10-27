@@ -10,7 +10,7 @@ score(-5..5).
 stat(1..5).
 
 %LOCATION GRAPH%
-3 { location(0..5) } 3.
+5 { location(0..5) } 5.
 
 1 { connected(X,Y) :  location(X)} :- location(Y).
 
@@ -52,3 +52,4 @@ total(L, S) :- S = #count{ A : atLocation(A, L)}, location(L).
 %#show atLocation/2.
 %#show locationAttributes/3.
 %#show total/2.
+%#show connected/2.

@@ -9,9 +9,11 @@ var app = express();
 
 app.use(express.static('public'));
 
-// app.get('/home', function(req, res) {
-//     res.send('Hello World!');
-// })
+app.get('/init', function(req, res) {
+    init(function(state) {
+        res.json(state);
+    })
+})
 
 app.listen(3000, function(err) {
     if(!err)
@@ -20,18 +22,22 @@ app.listen(3000, function(err) {
 
 var clingo = new Clingo();
 
-clingo.config({ // Sets the basic configuration for this clingo instance
-    maxModels: 1 // Return all models
-});
 
-clingo.config({
-    args: ['--seed=' + getRandomInt(0, 10000), "--rand-freq=1", "--sign-def=rnd"],
-    maxModels: 1
-});
+function init(callback){
+    solve(['initial_generation.lp'], function(model){
+        resetState();
+        processModel(model);
+        //renderInit();
+        callback(state);
+    });
+}
 
-solve(['initial_generation.lp'], processModel);
-var count = 0;
 function solve(inputFiles, callback) {
+    clingo.config({
+        args: ['--seed=' + getRandomInt(0, 10000), "--rand-freq=1", "--sign-def=rnd"],
+        maxModels: 1
+    });
+
     var currentModel = [];
 
     clingo.solve({
@@ -45,18 +51,15 @@ function solve(inputFiles, callback) {
         .on('end', function () {
             // This function gets called after all models have been received
             currentModel.pop();
-            // if(count != 1)
-            //     processModel(currentModel[0]);
-            // else {
-            //     console.log(currentModel[0])
-            // }
-            // count++;
             callback(currentModel[0]);
 
         });
 }
 
-var state = {animals: {}, map: {}, tick: 1, score: {min: 0, max: 0}, species: [], issues: []};
+var state;
+function resetState(){
+    state = {animals: {}, map: {}, tick: 1, score: {min: 0, max: 0}, species: [], issues: []};
+}
 
 var invariantFacts = ["score", "stat", "terrain", "size", "issue", "species"];
 var animalFacts = ["animal", "ofSpecies", "impressionable", "influential", "friendliness", "opinion", "atLocation"];
@@ -201,4 +204,3 @@ function writeFactsToFile(filename, facts) {
         }
     })
 }
-
