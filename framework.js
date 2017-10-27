@@ -4,6 +4,19 @@ function getRandomInt(min, max) {
 
 var Clingo = require('clingojs');
 var fs = require('fs');
+const express = require('express');
+var app = express();
+
+app.use(express.static('public'));
+
+// app.get('/home', function(req, res) {
+//     res.send('Hello World!');
+// })
+
+app.listen(3000, function(err) {
+    if(!err)
+        console.log("Listening on port 3000")
+})
 
 var clingo = new Clingo();
 
@@ -16,9 +29,9 @@ clingo.config({
     maxModels: 1
 });
 
-solve(['initial_generation.lp']);
+solve(['initial_generation.lp'], processModel);
 var count = 0;
-function solve(inputFiles) {
+function solve(inputFiles, callback) {
     var currentModel = [];
 
     clingo.solve({
@@ -32,12 +45,13 @@ function solve(inputFiles) {
         .on('end', function () {
             // This function gets called after all models have been received
             currentModel.pop();
-            if(count != 1)
-                processModel(currentModel[0]);
-            else {
-                console.log(currentModel[0])
-            }
-            count++;
+            // if(count != 1)
+            //     processModel(currentModel[0]);
+            // else {
+            //     console.log(currentModel[0])
+            // }
+            // count++;
+            callback(currentModel[0]);
 
         });
 }
@@ -55,9 +69,12 @@ function processModel(model) {
     facts.sort(compareFactNames);
     facts.forEach(parse);
     console.log(state);
+}
+
+function updateModel() {
     var newFacts = createASPFacts(state);
     writeFactsToFile("./temp.lp", newFacts);
-    solve(['./temp.lp', 'update_models.lp'])
+    solve(['./temp.lp', 'update_models.lp'], console.log)
 }
 
 function compareFactNames(a, b) {
@@ -184,3 +201,4 @@ function writeFactsToFile(filename, facts) {
         }
     })
 }
+
