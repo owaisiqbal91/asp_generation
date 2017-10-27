@@ -15,6 +15,12 @@ app.get('/init', function(req, res) {
     })
 })
 
+app.get('/update', function(req, res) {
+    updateModel(function(state) {
+        res.json(state);
+    })
+})
+
 app.listen(3000, function(err) {
     if(!err)
         console.log("Listening on port 3000")
@@ -31,6 +37,7 @@ function init(callback){
         callback(state);
     });
 }
+
 
 function solve(inputFiles, callback) {
     clingo.config({
@@ -74,10 +81,13 @@ function processModel(model) {
     console.log(state);
 }
 
-function updateModel() {
+function updateModel(callback) {
     var newFacts = createASPFacts(state);
     writeFactsToFile("./temp.lp", newFacts);
-    solve(['./temp.lp', 'update_models.lp'], console.log)
+    solve(['./temp.lp', 'update_models.lp'], function(model) {
+        processModel(model);
+        callback(state);
+    });
 }
 
 function compareFactNames(a, b) {

@@ -10,7 +10,7 @@ score(-5..5).
 stat(1..5).
 
 %LOCATION GRAPH%
-5 { location(0..5) } 5.
+3 { location(0..5) } 6.
 
 1 { connected(X,Y) :  location(X)} :- location(Y).
 
