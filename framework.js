@@ -86,6 +86,7 @@ function updateModel(callback) {
     writeFactsToFile("./temp.lp", newFacts);
     solve(['./temp.lp', 'update_models.lp'], function(model) {
         processModel(model);
+        state.tick++;
         callback(state);
     });
 }
@@ -128,6 +129,10 @@ function parse(fact) {
                 break;
 
             case "atLocation":
+                if(factValues.length == 3){
+                    if(parseInt(factValues[2]) <= state.tick)
+                        break;
+                }
                 state.animals[factValues[0]].location = factValues[1];
                 break;
         }
