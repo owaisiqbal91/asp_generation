@@ -1,4 +1,5 @@
 const express = require('express');
+var bodyParser = require('body-parser');
 var app = express();
 var clingoFramework = require('./framework2.js')
 
@@ -134,7 +135,7 @@ function createASPFacts() {
         aspFacts.push(clingo.createASPFact("influential", [animalId, state.animals[animalId].stats.influential], false))
         aspFacts.push(clingo.createASPFact("impressionable", [animalId, state.animals[animalId].stats.impressionable], false))
         Object.keys(state.animals[animalId].opinions).forEach(function(issue) {
-            aspFacts.push(clingo.createASPFact("opinion", [issue, state.animals[animalId].opinions[issue]]));
+            aspFacts.push(clingo.createASPFact("opinion", [animalId, issue, state.animals[animalId].opinions[issue]]));
         });
     });
     Object.keys(state.map).forEach(function(locationId) {
@@ -144,6 +145,23 @@ function createASPFacts() {
         });
     });
     return aspFacts;
+}
+
+function calculateApprovalRatings(candidateOpinions) {
+    var aTotal = 0;
+    var bTotal = 0;
+    for(var animal in Object.values(state.animals)){
+        for(var issue in state.animals[animal].opinions){
+            var opinion = state.animals[animal].opinions[issue];
+            aTotal += Math.abs(opinion - candidateOpinions.a[issue]);
+            bTotal += Math.abs(opinion - candidateOpinions.b[issue]);
+        }
+    }
+
+    var aRating = aTotal/(Object.values(state.animals).length * Object.values(state.issues).length);
+    var bRating = bTotal/(Object.values(state.animals).length * Object.values(state.issues).length);
+
+    return {aRating: aRating, bRating: bRating};
 }
 
 
@@ -157,6 +175,7 @@ var clingo = new clingoFramework(
 resetState();
 
 app.use(express.static('public'));
+app.use(bodyParser.json());
 
 app.get('/init', function(req, res) {
     clingo.solve(['initial_generation.lp'], true, function() {
@@ -164,10 +183,14 @@ app.get('/init', function(req, res) {
     });
 })
 
-app.get('/update', function(req, res) {
+app.post('/update', function(req, res) {
     var stateFacts = createASPFacts();
+    var candidateOpinions = req.body;
+    console.log(candidateOpinions);
     clingo.writeFactsToFile('temp.lp', stateFacts);
     clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
+        var approvalRatings = calculateApprovalRatings(candidateOpinions);
+        console.log("Approval Ratings: "+JSON.stringify(approvalRatings));
         res.json(state);
     })
 })

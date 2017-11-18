@@ -109,8 +109,21 @@ function getDetails(x, y) {
 
 function updateWorld() {
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "/update", false ); // false for synchronous request
-    xmlHttp.send( null );
+    var candidateOpinions = {
+        a: {
+            waterSupply: 0,
+            education: 0,
+            vegetarianism: 0
+        },
+        b: {
+            waterSupply: 0,
+            education: 0,
+            vegetarianism: 0
+        }
+    };
+    xmlHttp.open( "POST", "/update", false ); // false for synchronous request
+    xmlHttp.setRequestHeader("Content-Type", "application/json");
+    xmlHttp.send( JSON.stringify(candidateOpinions) );
     World.state = JSON.parse(xmlHttp.response);
     render();
 }
