@@ -2,10 +2,6 @@ const express = require('express');
 var app = express();
 var clingoFramework = require('./framework2.js')
 
-var clingo = new clingoFramework(
-    ASPParseCallbacks,
-    allFacts 
-);
 var state;
 
 //GAME CONSTANTS
@@ -60,7 +56,6 @@ function opinionCallback(animalId, issue, score) {
 
 //atLocation(animalId, locationId).
 function atLocationCallback(animalId, locationId) {
-    //TODO: only give latest location
     state.animals[animalId].location = locationId;
 }
 
@@ -133,7 +128,7 @@ function createASPFacts() {
     state.issues.forEach(function(issue) {
         aspFacts.push(clingo.createASPFact("issue", [issue], false));
     });
-    Objects.keys(state.animals).forEach(function(animalId) {
+    Object.keys(state.animals).forEach(function(animalId) {
         aspFacts.push(clingo.createASPFact("animal", [animalId], false));
         aspFacts.push(clingo.createASPFact("atLocation", [animalId, state.animals[animalId].location]));
         aspFacts.push(clingo.createASPFact("influential", [animalId, state.animals[animalId].stats.influential], false))
@@ -143,9 +138,9 @@ function createASPFacts() {
         });
     });
     Object.keys(state.map).forEach(function(locationId) {
-        aspFacts.push("location", [locationId], false);
+        aspFacts.push(clingo.createASPFact("location", [locationId], false));
         state.map[locationId].connected.forEach(function(locationId2) {
-            aspFacts.push("connected", [locationId, locationId2], false);
+            aspFacts.push(clingo.createASPFact("connected", [locationId, locationId2], false));
         });
     });
     return aspFacts;
@@ -154,10 +149,31 @@ function createASPFacts() {
 
 //GAME ROUTES
 
+var clingo = new clingoFramework(
+    ASPParseCallbacks,
+    allFacts 
+);
+
+resetState();
+
 app.use(express.static('public'));
 
 app.get('/init', function(req, res) {
-    
+    clingo.solve(['initial_generation.lp'], true, function() {
+        res.json(state);
+    });
 })
 
-console.log(clingo);
+app.get('/update', function(req, res) {
+    var stateFacts = createASPFacts();
+    clingo.writeFactsToFile('temp.lp', stateFacts);
+    clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
+        res.json(state);
+    })
+})
+
+app.listen(3000, function(err) {
+    if(!err) {
+        console.log("Listening on port 3000...");
+    }
+})

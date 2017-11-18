@@ -9,15 +9,18 @@ function Framework(factsCallbacks, factsOrder) {
     this.clingo = new Clingo();
     this.factsCallbacks = factsCallbacks;
     this.factsOrder = factsOrder;
+    this.tickingFacts = new Set();
+    this.tick = 1;
 }
 
-Framework.prototype.solve = function(inputFiles) {
+Framework.prototype.solve = function(inputFiles, updateTick, done) {
     this.clingo.config({
         args: ['--seed=' + getRandomInt(0, 10000), "--rand-freq=1", "--sign-def=rnd"],
         maxModels: 1
     });
 
     var currentModel = [];
+    var framework = this;
 
     this.clingo.solve({
         inputFiles: inputFiles
@@ -29,8 +32,10 @@ Framework.prototype.solve = function(inputFiles) {
         })
         .on('end', function () {
             // This function gets called after all models have been received
-            currentModel.pop();
-            this.processModel(currentModel[0]);
+            //currentModel.pop();            
+            framework.processModel(currentModel[0]);
+            framework.tick++;
+            done();
         });
 }
 
@@ -40,7 +45,6 @@ Framework.prototype.compareFactNames = function(a, b) {
 
 Framework.prototype.extractFacts = function(model) {
     var facts = [];
-
     model.forEach(function (fact) {
         var factArray = new RegExp("([a-zA-Z]*)\\((.*)\\)").exec(fact);
         var factName = factArray[1];
@@ -56,16 +60,24 @@ Framework.prototype.extractFacts = function(model) {
 Framework.prototype.parse = function(fact) {
     var factName = Object.keys(fact)[0];
     var factValues = fact[factName];
-    this.factsCallbacks[factName].apply(this, factValues);
+    if(this.factsCallbacks[factName]) {
+        if(this.tickingFacts.has(factName)) {
+            var lastFact = factValues[factValues.length - 1];
+            if(parseInt(lastFact) <= this.tick)
+                return;
+        }
+        this.factsCallbacks[factName].apply(this, factValues);
+    }
 }
 
 Framework.prototype.processModel = function(model) {
-    var facts = extractFacts(model);
-    facts.sort(this.compareFactNames);
-    facts.forEach(parse);
+    var facts = this.extractFacts(model);
+    facts.sort(this.compareFactNames.bind(this));
+    facts.forEach(this.parse.bind(this));
 }
 
 Framework.prototype.writeFactsToFile = function(filename, facts) {
+    facts.push(this.createASPFact("tick", [this.tick], false));
     fs.writeFile(filename, facts.join('\n'), function(err) {
         if(err) {
             console.log("Error: " + err);
@@ -75,8 +87,10 @@ Framework.prototype.writeFactsToFile = function(filename, facts) {
 
 Framework.prototype.createASPFact = function(key, params, addTick = true) {
     var parameters = params.join(',');
-    if(addTick == true)
+    if(addTick == true) {
+        this.tickingFacts.add(key);
         parameters += "," + this.tick;
+    }
     return key + "(" + parameters + ")."; 
 }
 
