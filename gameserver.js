@@ -150,7 +150,7 @@ function createASPFacts() {
 function calculateApprovalRatings(candidateOpinions) {
     var aTotal = 0;
     var bTotal = 0;
-    for(var animal in Object.values(state.animals)){
+    for(var animal in Object.keys(state.animals)){
         for(var issue in state.animals[animal].opinions){
             var opinion = state.animals[animal].opinions[issue];
             aTotal += Math.abs(opinion - candidateOpinions.a[issue]);
@@ -158,10 +158,10 @@ function calculateApprovalRatings(candidateOpinions) {
         }
     }
 
-    var aRating = aTotal/(Object.values(state.animals).length * Object.values(state.issues).length);
-    var bRating = bTotal/(Object.values(state.animals).length * Object.values(state.issues).length);
+    var aRating = aTotal/(Object.keys(state.animals).length * Object.keys(state.issues).length);
+    var bRating = bTotal/(Object.keys(state.animals).length * Object.keys(state.issues).length);
 
-    return {aRating: aRating, bRating: bRating};
+    return {a: aRating, b: bRating};
 }
 
 
@@ -186,11 +186,10 @@ app.get('/init', function(req, res) {
 app.post('/update', function(req, res) {
     var stateFacts = createASPFacts();
     var candidateOpinions = req.body;
-    console.log(candidateOpinions);
     clingo.writeFactsToFile('temp.lp', stateFacts);
     clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
         var approvalRatings = calculateApprovalRatings(candidateOpinions);
-        console.log("Approval Ratings: "+JSON.stringify(approvalRatings));
+        state.approvalRatings = approvalRatings;
         res.json(state);
     })
 })

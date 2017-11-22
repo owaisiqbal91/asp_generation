@@ -4,7 +4,7 @@ var context = canvas.getContext('2d');
 canvas.addEventListener("mousemove", function(evt) {
     var x = evt.clientX - canvas.getBoundingClientRect().left;
     var y = evt.clientY - canvas.getBoundingClientRect().top;
-    document.getElementById('details').innerText = getDetails(x, y);
+    document.getElementById('animalDetails').innerText = getDetails(x, y);
 })
 
 var locationCoords = {};
@@ -28,7 +28,6 @@ function renderInit(){
     xmlHttp.send( null );
     var state = JSON.parse(xmlHttp.response);
     World.state = state;
-    console.log(state);
     locations = Object.keys(state.map);
     length = locations.length;
     angleIncrement = (2 * Math.PI) / length;
@@ -54,7 +53,10 @@ function renderInit(){
 
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
-
+    if(World.state.approvalRatings) {
+        document.getElementById("teamA").innerHTML = World.state.approvalRatings.a;
+        document.getElementById("teamB").innerHTML = World.state.approvalRatings.b;
+    }
     for (var i = 0; i < length; i++) {
         var locationCoord = locationCoords[locations[i]];
 
@@ -100,27 +102,23 @@ function getDetails(x, y) {
         var ax = animalCoords[animalKeys[i]].x;
         var ay = animalCoords[animalKeys[i]].y;
         if(x >= ax && x <= (ax + animalSize) && y >= ay && y <= (ay + animalSize)) {
-            console.log(JSON.stringify(World.state.animals[animalKeys[i]]));
+            //console.log(JSON.stringify(World.state.animals[animalKeys[i]]));
             return JSON.stringify(World.state.animals[animalKeys[i]]);
         }
     }
-    return "";
+    return document.getElementById('animalDetails').innerText;
 }
 
 function updateWorld() {
     var xmlHttp = new XMLHttpRequest();
     var candidateOpinions = {
-        a: {
-            waterSupply: 0,
-            education: 0,
-            vegetarianism: 0
-        },
-        b: {
-            waterSupply: 0,
-            education: 0,
-            vegetarianism: 0
-        }
+        a: {},
+        b: {}
     };
+    World.state.issues.forEach(function(issue) {
+        candidateOpinions.a[issue] = parseInt(document.getElementById(issue).innerText);
+        candidateOpinions.b[issue] = parseInt(document.getElementById(issue).innerText);
+    })
     xmlHttp.open( "POST", "/update", false ); // false for synchronous request
     xmlHttp.setRequestHeader("Content-Type", "application/json");
     xmlHttp.send( JSON.stringify(candidateOpinions) );

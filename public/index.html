@@ -2,16 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="utils/ui/jquery-ui.css" rel="stylesheet">
     <title>King of the Jungle</title>
+    <style>
+        div {
+            float:left;
+            border: 1px solid #000;
+            width: 546px;
+            height: 100%;
+            word-wrap: break-word;
+            padding: 10px;
+        }
+        p {
+            display: inline;
+        }
+        label {
+            display: block;
+        }
+        .issue {
+            width: 100%;
+            border:none;
+        }
+    </style>
 </head>
 <body>
-<canvas id="kingOfTheJungle" width="1000" height="800" style="border:1px solid #000">
-    Canvas not supported
-</canvas>
-<div style="border: 1px solid #000; float:right; height: 800px; width: 400px; word-wrap: break-word;" id="details">
+<div id="container" style="width:1600px">
+    <div id="canvasDiv" style="width: 1000px; margin-right: 10px;">
+    <canvas id="kingOfTheJungle" width="1000" height="800" >
+        Canvas not supported
+    </canvas>
+    </div>
+    <div id="approvals">
+        <h3>Approvals</h3>
+        <label for="teamA">Team A: <p id="teamA">Not yet surveyed</p></label>
+        <label for="teamB">Team B: <p id="teamB">Not yet surveyed</p></label>
+    </div>
+    <div>
+        <h3>Animal Details</h3>
+        <p id="animalDetails"></p>
+    </div>
+    <div>
+        <h3>Issues</h3>
+        <div class="issue">
+            <label for="education">Education: </label>
+            <div id="slider-education" style="width:90%">
+                <div id="education" name="education" class="ui-slider-handle">
+                </div>
+            </div>
+        </div>
+        <div class="issue">
+            <label for="vegetarianism">Vegetarianism: </label>
+            <div id="slider-vegetarianism" style="width:90%">
+                <div id="vegetarianism" name="vegetarianism" class="ui-slider-handle">
+                </div>
+            </div>
+        </div>
+        <div class="issue">
+            <label for="waterSupply">Water Supply: </label>
+            <div id="slider-waterSupply" style="width:90%">
+                <div id="waterSupply" name="waterSupply" class="ui-slider-handle">
+                </div>
+            </div>
+        </div>
+        <button style="width:100%; margin-top: 50px" onclick="updateWorld();">Update</button>
+    </div>
 </div>
-<button onclick="updateWorld();">Update</button>
-<!--<script src="./../framework.js"></script>-->
-<script src="./renderState.js"></script>
+<script type="text/javascript" src="./utils/ui/external/jquery/jquery.js"></script>
+<script type="text/javascript" src="./utils/ui/jquery-ui.js"></script>
+<script type="text/javascript" src="./utils/ui.js"></script>
+<script type="text/javascript" src="./renderState.js"></script>
 </body>
 </html>
