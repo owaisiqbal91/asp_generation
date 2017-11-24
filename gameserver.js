@@ -161,7 +161,7 @@ function calculateApprovalRatings() {
             }
         }
         var aRating = aTotal/(Object.keys(state.animals).length * Object.keys(state.issues).length);
-        approvalRatings[player] = aRating;
+        approvalRatings[player] = 10 - aRating;
     }
 
     return approvalRatings;
@@ -185,6 +185,7 @@ app.get('/init', function(req, res) {
     state.players.push(id);
     if(state.players.length == 1) {
         clingo.solve(['initial_generation.lp'], true, function() {
+            state.tick = clingo.tick;
             res.json({
                 state: state,
                 currentPlayerId: id

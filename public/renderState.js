@@ -30,7 +30,6 @@ function renderInit(){
     World.state = response.state;
     World.currentPlayerId = response.currentPlayerId;
     document.getElementById("playerId").innerText = World.currentPlayerId;
-    document.getElementById("tick").innerText = World.state.tick;
     locations = Object.keys(World.state.map);
     length = locations.length;
     angleIncrement = (2 * Math.PI) / length;
@@ -56,6 +55,7 @@ function renderInit(){
 
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById("tick").innerText = World.state.tick - 1;
     if(World.state.approvalRatings) {
         console.log(World.state.approvalRatings)
         for(var player in Object.keys(World.state.approvalRatings)) {
