@@ -13,7 +13,10 @@ function resetState() {
         tick: 1, 
         score: {min: 0, max: 0}, 
         species: [], 
-        issues: []
+        issues: [],
+        players: [],
+        candidateOpinions: [],
+        playersReadyCount: 0
     };
 }
 
@@ -147,21 +150,21 @@ function createASPFacts() {
     return aspFacts;
 }
 
-function calculateApprovalRatings(candidateOpinions) {
-    var aTotal = 0;
-    var bTotal = 0;
-    for(var animal in Object.keys(state.animals)){
-        for(var issue in state.animals[animal].opinions){
-            var opinion = state.animals[animal].opinions[issue];
-            aTotal += Math.abs(opinion - candidateOpinions.a[issue]);
-            bTotal += Math.abs(opinion - candidateOpinions.b[issue]);
+function calculateApprovalRatings() {
+    var approvalRatings = {};
+    for(var player in state.candidateOpinions) {
+        var aTotal = 0;
+        for(var animal in Object.keys(state.animals)){
+            for(var issue in state.animals[animal].opinions){
+                var opinion = state.animals[animal].opinions[issue];
+                aTotal += Math.abs(opinion - state.candidateOpinions[player][issue]);
+            }
         }
+        var aRating = aTotal/(Object.keys(state.animals).length * Object.keys(state.issues).length);
+        approvalRatings[player] = aRating;
     }
 
-    var aRating = aTotal/(Object.keys(state.animals).length * Object.keys(state.issues).length);
-    var bRating = bTotal/(Object.keys(state.animals).length * Object.keys(state.issues).length);
-
-    return {a: aRating, b: bRating};
+    return approvalRatings;
 }
 
 
@@ -178,20 +181,45 @@ app.use(express.static('public'));
 app.use(bodyParser.json());
 
 app.get('/init', function(req, res) {
-    clingo.solve(['initial_generation.lp'], true, function() {
-        res.json(state);
-    });
+    id = state.players.length;
+    state.players.push(id);
+    if(state.players.length == 1) {
+        clingo.solve(['initial_generation.lp'], true, function() {
+            res.json({
+                state: state,
+                currentPlayerId: id
+            });
+        });
+    } else {
+        res.json({
+            state: state,
+            currentPlayerId: id
+        });
+    }
 })
 
 app.post('/update', function(req, res) {
     var stateFacts = createASPFacts();
-    var candidateOpinions = req.body;
-    clingo.writeFactsToFile('temp.lp', stateFacts);
-    clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
-        var approvalRatings = calculateApprovalRatings(candidateOpinions);
-        state.approvalRatings = approvalRatings;
-        res.json(state);
-    })
+    var candidateOpinions = req.body.candidateOpinions;
+    var playerId = req.body.currentPlayerId;
+    state.playersReadyCount++;
+    state.candidateOpinions[playerId] = candidateOpinions;
+    if(state.playersReadyCount == state.players.length) {
+        clingo.writeFactsToFile('temp.lp', stateFacts);
+        clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
+            var approvalRatings = calculateApprovalRatings();
+            state.approvalRatings = approvalRatings;
+            state.tick = clingo.tick;
+            state.playersReadyCount = 0;
+            res.json({});
+        });
+    } else {
+        res.json({});
+    }
+})
+
+app.get('/getState', function(req, res) {
+    res.json(state);
 })
 
 app.listen(3000, function(err) {

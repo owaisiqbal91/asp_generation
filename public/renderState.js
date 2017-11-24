@@ -26,9 +26,12 @@ function renderInit(){
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", "/init", false ); // false for synchronous request
     xmlHttp.send( null );
-    var state = JSON.parse(xmlHttp.response);
-    World.state = state;
-    locations = Object.keys(state.map);
+    var response = JSON.parse(xmlHttp.response);
+    World.state = response.state;
+    World.currentPlayerId = response.currentPlayerId;
+    document.getElementById("playerId").innerText = World.currentPlayerId;
+    document.getElementById("tick").innerText = World.state.tick;
+    locations = Object.keys(World.state.map);
     length = locations.length;
     angleIncrement = (2 * Math.PI) / length;
 
@@ -54,8 +57,10 @@ function renderInit(){
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     if(World.state.approvalRatings) {
-        document.getElementById("teamA").innerHTML = World.state.approvalRatings.a;
-        document.getElementById("teamB").innerHTML = World.state.approvalRatings.b;
+        console.log(World.state.approvalRatings)
+        for(var player in Object.keys(World.state.approvalRatings)) {
+            document.getElementById("team" + player).innerHTML = World.state.approvalRatings[player];
+        }
     }
     for (var i = 0; i < length; i++) {
         var locationCoord = locationCoords[locations[i]];
@@ -111,17 +116,33 @@ function getDetails(x, y) {
 
 function updateWorld() {
     var xmlHttp = new XMLHttpRequest();
-    var candidateOpinions = {
-        a: {},
-        b: {}
-    };
+    var candidateOpinions = {};
     World.state.issues.forEach(function(issue) {
-        candidateOpinions.a[issue] = parseInt(document.getElementById(issue).innerText);
-        candidateOpinions.b[issue] = parseInt(document.getElementById(issue).innerText);
+        candidateOpinions[issue] = parseInt(document.getElementById(issue).innerText);
     })
     xmlHttp.open( "POST", "/update", false ); // false for synchronous request
     xmlHttp.setRequestHeader("Content-Type", "application/json");
-    xmlHttp.send( JSON.stringify(candidateOpinions) );
-    World.state = JSON.parse(xmlHttp.response);
-    render();
+    console.log(candidateOpinions)
+    console.log(JSON.stringify({
+        candidateOpinions: candidateOpinions,
+        currentPlayerId: World.currentPlayerId
+    }));
+    xmlHttp.send( JSON.stringify({
+        candidateOpinions: candidateOpinions,
+        currentPlayerId: World.currentPlayerId
+    }) );
+    //var response = JSON.parse(xmlHttp.response);
+    var intervalId = window.setInterval(function() {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open( "GET", "/getState", false ); // false for synchronous request
+        xmlHttp.setRequestHeader("Content-Type", "application/json");
+        xmlHttp.send(null);
+        var response = JSON.parse(xmlHttp.response);
+
+        if(response != undefined && response.tick != World.state.tick) {
+            clearInterval(intervalId);
+            World.state = response;
+            render();
+        }
+    }, 1000);
 }
