@@ -107,7 +107,6 @@ function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     document.getElementById("tick").innerText = World.state.tick - 1;
     if(World.state.approvalRatings) {
-        console.log(World.state.approvalRatings)
         for(var player in Object.keys(World.state.approvalRatings)) {
             document.getElementById("team" + player).innerHTML = World.state.approvalRatings[player];
         }
@@ -152,11 +151,6 @@ function updateWorld() {
     })
     xmlHttp.open( "POST", "/update", false ); // false for synchronous request
     xmlHttp.setRequestHeader("Content-Type", "application/json");
-    console.log(candidateOpinions)
-    console.log(JSON.stringify({
-        candidateOpinions: candidateOpinions,
-        currentPlayerId: World.currentPlayerId
-    }));
     xmlHttp.send( JSON.stringify({
         candidateOpinions: candidateOpinions,
         currentPlayerId: World.currentPlayerId
@@ -173,6 +167,11 @@ function updateWorld() {
             clearInterval(intervalId);
             World.state = response;
             render();
+            if((World.state.tick - 1) == 5) {
+                showEndGameDialog();
+                return;
+            }
+            showDialog();
             document.getElementById("updateButton").disabled = false;
             document.getElementById("updateButton").innerText = "Update World";
         }

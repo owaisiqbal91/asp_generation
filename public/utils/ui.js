@@ -24,3 +24,28 @@ $(function() {
 $(function() {
     $("button").button();
 });
+
+function showDialog() {
+    $(function() {
+        $("#dialog").dialog({
+            modal: true,
+            // buttons: {
+            //     Close: function() {
+            //         $(this).dialog("close");
+            //     }
+            // },
+            width: 1000,
+            height: 700
+        });
+    });
+}
+
+function showEndGameDialog() {
+    $(function() {
+        $("#dialog-end").dialog({
+            modal: true,
+            width: 1000,
+            height: 400
+        });
+    });
+}
