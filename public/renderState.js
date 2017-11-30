@@ -19,6 +19,7 @@ var angle = 0;
 var rectWidth = 200;
 var rectHeight = 200;
 var animalSize = 32;
+var worldInit = false;
 function World(){}
 
 renderInit();
@@ -142,6 +143,8 @@ function getDetails(x, y) {
 }
 
 function updateWorld() {
+    document.getElementById("updateButton").disabled = true;
+    document.getElementById("updateButton").innerText = "Waiting for day to end!";
     var xmlHttp = new XMLHttpRequest();
     var candidateOpinions = {};
     World.state.issues.forEach(function(issue) {
@@ -170,6 +173,8 @@ function updateWorld() {
             clearInterval(intervalId);
             World.state = response;
             render();
+            document.getElementById("updateButton").disabled = false;
+            document.getElementById("updateButton").innerText = "Update World";
         }
     }, 1000);
 }
