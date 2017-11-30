@@ -53,6 +53,55 @@ function renderInit(){
     render();
 }
 
+
+function drawAnimals() {
+    var animalKeys = Object.keys(World.state.animals);
+    for(var i=0; i<animalKeys.length; i++){
+        var img = new Image();
+        img.width = animalSize;
+        img.height = animalSize;
+        img.animal = World.state.animals[animalKeys[i]];
+        img.coordX = locationCoords[img.animal.location].x - (rectWidth / 2) + Math.random() * (rectWidth - img.width);
+        img.coordY = locationCoords[img.animal.location].y - (rectHeight / 2) + Math.random() * (rectHeight - img.height);
+        animalCoords[animalKeys[i]] = {x: img.coordX, y: img.coordY};
+        img.onload = function() {
+            context.drawImage(this, this.coordX, this.coordY, this.width, this.height);
+        }
+        img.src = "images/"+animalSpecies[animalKeys[i]]+".png";
+    }
+}
+
+
+function drawTerrain() {
+    var terrainDrawn = 0;
+    for (var i = 0; i < length; i++) {
+        var locationCoord = locationCoords[locations[i]];
+        var rectX = locationCoord.x - rectWidth / 2;
+        var rectY = locationCoord.y - rectHeight / 2;
+        // context.fillStyle = "#ffffff";
+        // context.fillRect(rectX, rectY, rectWidth, rectHeight);
+        // context.strokeStyle = "#000000";
+        // context.strokeRect(rectX, rectY, rectWidth, rectHeight);
+
+        var img = new Image();
+        img.width = rectWidth;
+        img.height = rectHeight;
+        img.coordX = rectX;
+        img.coordY = rectY;
+        img.style.zIndex = "-1";
+        img.style.opacity = "0.1";
+        img.onload = function() {
+            context.drawImage(this, this.coordX, this.coordY, this.width, this.height);
+            terrainDrawn++;
+            if(terrainDrawn == length) {
+                drawAnimals();
+            }
+        }
+        img.src = "images/"+ World.state.map[locations[i]].terrain + ".jpg";
+    }
+}
+
+
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     document.getElementById("tick").innerText = World.state.tick - 1;
@@ -74,31 +123,9 @@ function render() {
         }
     }
 
-    for (var i = 0; i < length; i++) {
-        var locationCoord = locationCoords[locations[i]];
-        var rectX = locationCoord.x - rectWidth / 2;
-        var rectY = locationCoord.y - rectHeight / 2;
-        context.fillStyle = "#ffffff";
-        context.fillRect(rectX, rectY, rectWidth, rectHeight);
-        context.strokeStyle = "#000000";
-        context.strokeRect(rectX, rectY, rectWidth, rectHeight);
-    }
+    drawTerrain();
 
     //animals
-    var animalKeys = Object.keys(World.state.animals);
-    for(var i=0; i<animalKeys.length; i++){
-        var img = new Image();
-        img.width = animalSize;
-        img.height = animalSize;
-        img.animal = World.state.animals[animalKeys[i]];
-        img.coordX = locationCoords[img.animal.location].x - (rectWidth / 2) + Math.random() * (rectWidth - img.width);
-        img.coordY = locationCoords[img.animal.location].y - (rectHeight / 2) + Math.random() * (rectHeight - img.height);
-        animalCoords[animalKeys[i]] = {x: img.coordX, y: img.coordY};
-        img.onload = function() {
-            context.drawImage(this, this.coordX, this.coordY, this.width, this.height);
-        }
-        img.src = "images/"+animalSpecies[animalKeys[i]]+".png";
-    }
 }
 
 function getDetails(x, y) {
