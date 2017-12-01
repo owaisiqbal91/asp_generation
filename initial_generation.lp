@@ -4,7 +4,7 @@
 terrain(forest; grassland; riverbank; hills; desert).
 size(2).
 animal(0..5).
-species(lion; monkey; deer; crocodile; camel).
+species(lion; elephant; zebra; crocodile; camel).
 issue(waterSupply; education; vegetarianism).
 score(-5..5).
 stat(1..5).

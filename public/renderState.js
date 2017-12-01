@@ -68,7 +68,7 @@ function drawAnimals() {
         img.onload = function() {
             context.drawImage(this, this.coordX, this.coordY, this.width, this.height);
         }
-        img.src = "images/"+animalSpecies[animalKeys[i]]+".png";
+        img.src = "images/"+animalSpecies[animalKeys[i]]+"2.png";
     }
 }
 
