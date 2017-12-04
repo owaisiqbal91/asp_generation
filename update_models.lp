@@ -4,16 +4,16 @@
 
 %Communication
 
-1 { talk(X, Y, I) : issue(I) } 1 :-
+1 { talk(X, Y, I, T+1) : issue(I) } 1 :-
 animal(X), animal(Y), atLocation(X, L, T+1),
 atLocation(Y, L, T+1), tick(T), X!=Y.
 
-opinion(X, I, SX + SY*PX*FY/25, T+1) :- talk(X, Y, I), impressionable(X, PX),
+opinion(X, I, SX + SY*PX*FY/25, T+1) :- talk(X, Y, I, T+1), impressionable(X, PX),
 influential(Y, FY),
 opinion(X, I, SX, T), opinion(Y, I, SY, T),
 tick(T).
 
-opinion(Y, I, SY + SX*PY*FX/25, T+1) :- talk(X, Y, I),
+opinion(Y, I, SY + SX*PY*FX/25, T+1) :- talk(X, Y, I, T+1),
 impressionable(Y, PY),
 influential(X, FX),
 opinion(X, I, SX, T), opinion(Y, I, SY, T),

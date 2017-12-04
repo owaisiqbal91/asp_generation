@@ -1,53 +1,28 @@
+var Clingo = require('clingojs');
+var fs = require('fs');
+
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-var Clingo = require('clingojs');
-var fs = require('fs');
-const express = require('express');
-var app = express();
-
-app.use(express.static('public'));
-
-app.get('/init', function(req, res) {
-    init(function(state) {
-        res.json(state);
-    })
-})
-
-app.get('/update', function(req, res) {
-    updateModel(function(state) {
-        res.json(state);
-    })
-})
-
-app.listen(3000, function(err) {
-    if(!err)
-        console.log("Listening on port 3000")
-})
-
-var clingo = new Clingo();
-
-
-function init(callback){
-    solve(['initial_generation.lp'], function(model){
-        resetState();
-        processModel(model);
-        //renderInit();
-        callback(state);
-    });
+function Framework(factsCallbacks, factsOrder, variantFacts) {
+    this.clingo = new Clingo();
+    this.factsCallbacks = factsCallbacks;
+    this.factsOrder = factsOrder;
+    this.tickingFacts = new Set(variantFacts);
+    this.tick = 1;
 }
 
-
-function solve(inputFiles, callback) {
-    clingo.config({
+Framework.prototype.solve = function (inputFiles, updateTick, done) {
+    this.clingo.config({
         args: ['--seed=' + getRandomInt(0, 10000), "--rand-freq=1", "--sign-def=rnd"],
         maxModels: 1
     });
 
     var currentModel = [];
+    var framework = this;
 
-    clingo.solve({
+    this.clingo.solve({
         inputFiles: inputFiles
     })
         .on('model', function (model) {
@@ -57,125 +32,20 @@ function solve(inputFiles, callback) {
         })
         .on('end', function () {
             // This function gets called after all models have been received
-            currentModel.pop();
-            callback(currentModel[0]);
-
+            //currentModel.pop();  
+            framework.processModel(currentModel[0]);
+            if (updateTick)
+                framework.tick++;
+            done();
         });
 }
 
-var state;
-function resetState(){
-    state = {animals: {}, map: {}, tick: 1, score: {min: 0, max: 0}, species: [], issues: []};
+Framework.prototype.compareFactNames = function (a, b) {
+    return (this.factsOrder.indexOf(Object.keys(a)[0]) - this.factsOrder.indexOf(Object.keys(b)[0]));
 }
 
-var invariantFacts = ["score", "stat", "terrain", "size", "issue", "species"];
-var animalFacts = ["animal", "ofSpecies", "impressionable", "influential", "friendliness", "opinion", "atLocation"];
-var locationFacts = ["location", "connected", "locationAttributes", "total"];
-var variantFacts = ["atLocation", "opinion"];
-var allFacts = invariantFacts.concat(locationFacts).concat(animalFacts);
-
-function processModel(model) {
-    var facts = getFacts(model);
-    facts.sort(compareFactNames);
-    facts.forEach(parse);
-    console.log(state);
-}
-
-function updateModel(callback) {
-    var newFacts = createASPFacts(state);
-    writeFactsToFile("./temp.lp", newFacts);
-    solve(['./temp.lp', 'update_models.lp'], function(model) {
-        processModel(model);
-        state.tick++;
-        callback(state);
-    });
-}
-
-function compareFactNames(a, b) {
-    return (allFacts.indexOf(Object.keys(a)[0]) - allFacts.indexOf(Object.keys(b)[0]));
-}
-
-function parse(fact) {
-    var factName = Object.keys(fact)[0];
-    var factValues = fact[factName];
-    //animals
-    if (animalFacts.includes(factName)) {
-        switch (factName) {
-            case "animal":
-                state.animals[factValues[0]] = {name: factValues[0], stats: {}, opinions: {}};
-                break;
-
-            case "ofSpecies":
-                state.animals[factValues[0]].species = factValues[1];
-                break;
-
-            case "impressionable":
-                state.animals[factValues[0]].stats.impressionable = factValues[1];
-                break;
-
-            case "influential":
-                state.animals[factValues[0]].stats.influential = factValues[1];
-                break;
-
-            case "friendliness":
-                state.animals[factValues[0]].stats.friendliness = factValues[1];
-                break;
-
-            case "opinion":
-                var score = factValues[2];
-                if (score > state.score.max) score = state.score.max;
-                else if (score < state.score.min) score = state.score.min;
-                state.animals[factValues[0]].opinions[factValues[1]] = score;
-                break;
-
-            case "atLocation":
-                if(factValues.length == 3){
-                    if(parseInt(factValues[2]) <= state.tick)
-                        break;
-                }
-                state.animals[factValues[0]].location = factValues[1];
-                break;
-        }
-    } else if (locationFacts.includes(factName)) {
-        switch (factName) {
-            case "location":
-                state.map[factValues[0]] = {id: factValues[0], connected: []};
-                break;
-
-            case "connected":
-                state.map[factValues[0]].connected.push(factValues[1]);
-                break;
-
-            case "locationAttributes":
-                state.map[factValues[0]].terrain = factValues[1];
-                state.map[factValues[0]].size = factValues[2];
-                break;
-
-            case "total":
-                state.map[factValues[0]].total = factValues[1];
-                break;
-        }
-    } else if (invariantFacts.includes(factName)) {
-        switch (factName) {
-            case "score":
-                if (factValues[0] < state.score.min) state.score.min = parseInt(factValues[0]);
-                if (factValues[0] > state.score.max) state.score.max = parseInt(factValues[0]);
-                break;
-
-            case "species":
-                state.species.push(factValues[0]);
-                break;
-
-            case "issue":
-                state.issues.push(factValues[0]);
-                break;
-        }
-    }
-}
-
-function getFacts(model) {
+Framework.prototype.extractFacts = function (model) {
     var facts = [];
-
     model.forEach(function (fact) {
         var factArray = new RegExp("([a-zA-Z]*)\\((.*)\\)").exec(fact);
         var factName = factArray[1];
@@ -188,34 +58,50 @@ function getFacts(model) {
     return facts;
 }
 
-function createASPFacts(state) {
-    var aspFacts = [];
-    state.issues.forEach(function(issue) {
-        aspFacts.push("issue(" + issue +  ").");
-    });
-    Object.keys(state.animals).forEach(function(key) {
-        aspFacts.push("animal(" + key + ").");
-        aspFacts.push("atLocation(" + key + "," + state.animals[key].location + "," + state.tick + ").");
-        aspFacts.push("influential(" + key + "," + state.animals[key].stats.influential + ").");
-        aspFacts.push("impressionable(" + key + "," + state.animals[key].stats.impressionable + ").");
-        Object.keys(state.animals[key].opinions).forEach(function(issue) {
-            aspFacts.push("opinion(" + key + "," + issue + "," + state.animals[key].opinions[issue] + "," + state.tick +").");
-        })
-    });
-    Object.keys(state.map).forEach(function(key) {
-        aspFacts.push("location(" + key + ").");
-        state.map[key].connected.forEach(function(location) {
-            aspFacts.push("connected(" + key + "," + location + ").");
-        })
-    })
-    aspFacts.push("tick(" + state.tick + ").");
-    return aspFacts;
+Framework.prototype.parse = function (fact) {
+    var factName = Object.keys(fact)[0];
+    var factValues = fact[factName];
+    if (this.factsCallbacks[factName]) {
+        if (this.tick != 1 && this.tickingFacts.has(factName)) {
+            var lastFact = factValues[factValues.length - 1];
+            if (parseInt(lastFact) <= this.tick)
+                return;
+        }
+        if (this.tick == 1 || this.tickingFacts.has(factName))
+            this.factsCallbacks[factName].apply(this, factValues);
+    }
 }
 
-function writeFactsToFile(filename, facts) {
-    fs.writeFile(filename, facts.join('\n'), function(err) {
-        if(err) {
+Framework.prototype.processModel = function (model) {
+    var facts = this.extractFacts(model);
+    facts.sort(this.compareFactNames.bind(this));
+    facts.forEach(this.parse.bind(this));
+}
+
+Framework.prototype.writeFactsToFile = function (filename, facts) {
+    facts.push(this.createASPFact("tick", [this.tick], false));
+    fs.writeFile(filename, facts.join('\n'), function (err) {
+        if (err) {
             console.log("Error: " + err);
         }
     })
 }
+
+Framework.prototype.createASPFact = function (key, params, addTick = true) {
+    var parameters = params.join(',');
+    if (addTick == true) {
+        this.tickingFacts.add(key);
+        parameters += "," + this.tick;
+    }
+    return key + "(" + parameters + ").";
+}
+
+Framework.prototype.setOrder = function (keyOrder) {
+    this.keyOrder = keyOrder;
+}
+
+Framework.prototype.setRuleParseCallback = function (key, callback) {
+    this.RuleParseCallbacks[key] = callback;
+}
+
+module.exports = Framework;

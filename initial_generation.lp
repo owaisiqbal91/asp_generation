@@ -8,6 +8,7 @@ species(lion; elephant; zebra; crocodile; camel).
 issue(waterSupply; education; vegetarianism).
 score(-5..5).
 stat(1..5).
+names(akshay; owais; zach; zachery; nick; chris; sasha; robert; chungche; yuchen).
 
 %LOCATION GRAPH%
 3 { location(0..5) } 6.
@@ -27,6 +28,7 @@ connected(X, Y) :- connected(Y, X).
 1 {impressionable(X, P) : stat(P) } 1:- animal(X).
 1 {influential(X, F) : stat(F) } 1:- animal(X).
 1 {friendliness(X, F) : stat(F) } 1:- animal(X).
+1 {ofName(X, N) : names(N)} 1:- animal(X).
 
 %ANIMAL-LOCATION%
 % Counting the total number of animals per location and

@@ -17,21 +17,13 @@ function resetState() {
         players: [],
         candidateOpinions: [],
         playersReadyCount: 0,
-        headlines: "Player 0 moves into the lead with a strong 95% approval rating while player 1 lags behind by a small margin of 7%.",
-        interview: [
-            "Hi. Tell us a little bit about yourself?", 
-            "My name is Frog1. I'm from the grasslands of location 1.",
-            "That's awesome! What do you think about watersupply?", 
-            "I'm strongly for the issue of watersupply. I talked to zebra1 today and he further convinced me to be for this issue.",
-            "What do you think of the current candidates?", "I think the current candidates are very closely tied. I wish they were more for a particular issue.",
-            "Thanks for your time. Have a good night!"
-        ],
+        headlines: "",
+        interview: [],
         stats: {
-            mostDiscussed: "Water Supply",
-            mostOneSided: "Education",
-            mostContested: "Water Supply",
-            candidateOneHonor: 0.9,
-            candidateTwoHonor: 0.3
+            mostDiscussed: "",
+            mostOneSided: "",
+            mostContested: "",
+            candidateHonor: [0, 0]
         }
     };
 }
@@ -43,13 +35,18 @@ function animalCallback(animalId) {
     state.animals[animalId] = {
         name: animalId,
         stats: {},
-        opinions: {}
+        opinions: {},
+        conversation: {},
     };
 }
 
 //ofSpecies(animalId, species).
 function ofSpeciesCallback(animalId, species) {
     state.animals[animalId].species = species;
+}
+
+function ofNameCallback(animalId, name) {
+    state.animals[animalId].name = name;
 }
 
 //impressionable(animalId, impressionableScore).
@@ -122,9 +119,22 @@ function issueCallback(issue) {
     state.issues.push(issue);
 }
 
+
+//talk(animalX, animalY, issue).
+function talkCallback(animalX, animalY, issue) {
+    if(state.animals[animalX].conversation[issue] == undefined)
+        state.animals[animalX].conversation[issue] = new Set();
+    state.animals[animalX].conversation[issue].add(animalY);
+    if(state.animals[animalY].conversation[issue] == undefined)
+        state.animals[animalY].conversation[issue] = new Set();
+    state.animals[animalY].conversation[issue].add(animalX);
+    console.log("Talk: " + animalX + " " + animalY + " " + issue);
+}
+
 var ASPParseCallbacks = {
     "animal": animalCallback,
     "ofSpecies": ofSpeciesCallback,
+    "ofName": ofNameCallback,
     "impressionable": impressionableCallback,
     "influential": influentialCallback,
     "friendliness": friendlinessCallback,
@@ -137,12 +147,13 @@ var ASPParseCallbacks = {
     "score": scoreCallback,
     "species": speciesCallback,
     "issue": issueCallback,
+    "talk": talkCallback
 }
 
 var invariantFacts = ["score", "stat", "terrain", "size", "issue", "species"];
-var animalFacts = ["animal", "ofSpecies", "impressionable", "influential", "friendliness", "opinion", "atLocation"];
+var animalFacts = ["animal", "ofSpecies", "ofName", "impressionable", "influential", "friendliness", "opinion", "atLocation"];
 var locationFacts = ["location", "connected", "locationAttributes", "total"];
-var variantFacts = ["atLocation", "opinion"];
+var variantFacts = ["atLocation", "opinion", "talk"];
 var allFacts = invariantFacts.concat(locationFacts).concat(animalFacts);
 
 
@@ -187,22 +198,141 @@ function calculateApprovalRatings() {
 }
 
 function createHeadlines(newRatings) {
-    if(state.approvalRatings) {
+        "Player 0 moves into the lead with a strong 95% approval rating while player 1 lags behind by a small margin of 7%.";  
+    var oldLeader, oldRunnerUp, newLeader, newRunnerUp;
+    var players = Object.keys(newRatings);
 
+    newLeader = players.reduce(function(a, b) { return newRatings[a] > newRatings[b]? a : b});
+    newRunnerUp = players.reduce(function(a, b) { return newRatings[a] <= newRatings[b]? a : b});
+    var leaderScore = Math.round(newRatings[newLeader] * 10);
+    var runnerUpScore = Math.round(newRatings[newRunnerUp] * 10); 
+    
+    if(state.approvalRatings) {
+        oldLeader = players.reduce(function(a, b) { return state.approvalRatings[a] > state.approvalRatings[b]? a : b});
+        oldRunnerUp = players.reduce(function(a, b) { return state.approvalRatings[a] <= state.approvalRatings[b]? a : b});         
+    } else {
+        return "Player " + newLeader + " starts off campaign with a " + "strong " + leaderScore + "% approval rating." + " Player " + newRunnerUp + " in " +
+            "with an " + " underwhelming " + runnerUpScore + "%.";
     }
+
     var deltas = {};
     Object.keys(newRatings).forEach(function(player) {
         deltas[player] = {};
         deltas[player].delta = state.approvalRatings == undefined? newRatings[player]: newRatings[player] - state.approvalRatings[player];
     });
+    
+    if(oldLeader != newLeader) {
+        //Change in leader in approval ratings
+        return "Player " + newLeader + " moves into the lead with a " + "strong " + leaderScore + "% approval rating while player " + 
+            newRunnerUp + " lags behind by a " + "small " + "margin of " + (leaderScore - runnerUpScore) + "%.";
+    } else if(deltas[newRunnerUp] >= deltas[newLeader]) {
+        //Runner up is catching up
+        return "The battle is intense as " + " player " + newRunnerUp + " catches up. " + " Now " + (leaderScore - runnerUpScore) + "% behind in approvals.";
+    } else {
+        //Winner is pulling away
+        return "Player " + newLeader + "extends lead " + " with a " + leaderScore + "% approval rating.";
+    }
 }
 
+
+function createInterview() {
+    var animals = Object.keys(state.animals);
+    var animalId = animals[Math.floor(Math.random() * animals.length)];
+    var issue = state.issues[Math.floor(Math.random() * state.issues.length)];
+    var interview = [];
+    var candidate = state.players[Math.floor(Math.random() * state.players.length)];
+    var opponent = candidate == 0? 1: 0;
+    var q1 = "Hello! " + "Can you tell us a little about yourself?";
+    var a1 = "Hey! " + "My name is " + state.animals[animalId].name + " the " + state.animals[animalId].species + ". " +
+        "I am from the " + state.map[state.animals[animalId].location].terrain + " of " + state.animals[animalId].location + "." 
+    var q2 = "That's awesome! " + "What do you think about " + issue + "?";
+    var a2 = "I am " + "strongly in favor " + "spending more on " + issue + ". ";
+    if(state.animals[animalId].conversation[issue] != undefined) {
+        var otherAnimals = Array.from(state.animals[animalId].conversation[issue]);
+        var otherAnimalsWithNames = otherAnimals.map(a => state.animals[a].name + " the " + state.animals[a].species)
+        if(otherAnimals.length >= 1)
+            a2 += "I had a "+ " interesting " + " conversation with " + otherAnimalsWithNames.join(", ") + " about this topic.";
+    }
+    var q3 = "What do you think about Player " + candidate + "?";
+    var candidateScore = 0, opponentScore = 0;
+    for(var issue in state.animals[animalId].opinions) {
+        var opinion = state.animals[animalId].opinions[issue].score;
+        candidateScore = Math.abs(opinion - state.candidateOpinions[candidate][issue]);
+        opponentScore = Math.abs(opinion - state.candidateOpinions[opponent][issue]);
+    }
+    var a3 = "";
+    if(candidateScore > opponentScore) {
+        a3 += "I do not " + "like " + "player " + candidate + "'s decision on various issues in this election. ";  
+    } else {
+        a3 += "I " + "agree with " + "player " + candidate + "'s decision on various issues in this election. ";  
+    }
+    if(state.animals[animalId].opinions[issue] == state.candidateOpinions[opponent][issue]) {
+        a3 += "I completely agree with Player " + opponent + " on his position on " + issue + ".";
+    } else if(state.animals[animalId].opinions[issue] > state.candidateOpinions[opponent][issue]) {
+        a3 += "I wish Player " + opponent + " was more conservative when it comes to " + issue + ".";
+    } else {
+        a3 += "I wish Player " + opponent + " was more liberal on the topic of " + issue + ".";
+    }
+
+    var q4 = "Thanks. " + "Have a good night!";
+
+    interview.push(q1, a1, q2, a2, q3, a3, q4);
+    return interview;
+}
+
+function createStats(newRatings) {
+    var discussCount = [];
+    var variances = [];
+    for(var i in state.issues) {
+        var issue = state.issues[i];
+        var opinions = [];
+        discussCount[issue] = 0;
+        for(var animal in state.animals) {
+            var size = state.animals[animal].conversation[issue] == undefined ? 0: state.animals[animal].conversation[issue].size;
+            discussCount[issue] += size;
+            opinions.push(parseInt(state.animals[animal].opinions[issue].score));
+        }
+        var mean = (opinions.reduce((a, b) => a + b)) / Object.keys(state.animals).length;
+        var variance = 0;
+        for (var i = 0; i < opinions.length; i++) {
+            variance += Math.abs(mean - opinions[i]);
+        }
+        variances[issue] = variance;
+    }
+    var defaultIssue = state.issues[0];
+    var maxDiscuss = 0;
+    var maxDiscussIssue = defaultIssue;
+    var maxVariance = 0;
+    var maxVarianceIssue = defaultIssue;    
+    var minVariance = Infinity;
+    var minVarianceIssue = defaultIssue;
+    for(var i in discussCount) {
+        if(discussCount[i] > maxDiscuss) {
+            maxDiscuss = discussCount[i];
+            maxDiscussIssue = i;
+        }
+    }
+    for(var i in variances) {
+        if(variances[i] > maxVariance) {
+            maxVariance = variances[i];
+            maxVarianceIssue = i;
+        }
+        if(variances[i] <= minVariance) {
+            minVariance = variances[i];
+            minVarianceIssue = i;
+        }
+    }
+    state.stats.mostDiscussed = maxDiscussIssue;
+    state.stats.mostContested = maxVarianceIssue;
+    state.stats.mostOneSided = minVarianceIssue;
+}
 
 //GAME ROUTES
 
 var clingo = new clingoFramework(
     ASPParseCallbacks,
-    allFacts 
+    allFacts,
+    variantFacts 
 );
 
 resetState();
@@ -234,13 +364,22 @@ app.post('/update', function(req, res) {
     var candidateOpinions = req.body.candidateOpinions;
     var playerId = req.body.currentPlayerId;
     state.playersReadyCount++;
+    if(state.candidateOpinions[playerId] != undefined) {
+        for(var issue in candidateOpinions) {
+            state.stats.candidateHonor[playerId] +=  Math.abs(state.candidateOpinions[playerId][issue] - candidateOpinions[issue]);
+        }
+    }
     state.candidateOpinions[playerId] = candidateOpinions;
     if(state.playersReadyCount == state.players.length) {
         clingo.writeFactsToFile('temp.lp', stateFacts);
         clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
             var approvalRatings = calculateApprovalRatings();
+            createStats(approvalRatings);
             var headlines = createHeadlines(approvalRatings);
             state.approvalRatings = approvalRatings;
+            state.headlines = headlines;
+            var interview = createInterview();
+            state.interview = interview;
             state.tick = clingo.tick;
             state.playersReadyCount = 0;
             res.json({});
