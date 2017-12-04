@@ -1,7 +1,7 @@
 const express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
-var clingoFramework = require('./framework2.js')
+var clingoFramework = require('./framework.js')
 
 var state;
 
