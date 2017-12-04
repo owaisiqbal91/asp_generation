@@ -23,6 +23,9 @@
             width: 100%;
             border:none;
         }
+        body {
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -32,10 +35,18 @@
         <div style="width:96%; height:100px; margin-bottom: 8px" class="div">Results</div>
     </div>
     <div id="dialog" title="Date" style="display:none;">
-        <h1 style="text-align: center">Jungle Times</h1>
-        <div style="width:96%; height:100px; margin-bottom: 8px" class="div">Headlines</div>
-        <div style="width:46%; height:350px; float: left; margin-right: 8px" class="div">Interview</div>
-        <div style="width:47%; height:350px; float: left" class="div">Most something.. I forgot</div>
+        <h1 style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 40px">Jungle Times</h1>
+        <h2><div style="width:96%; height:75px; padding-top: 20px; text-align: center" class="div" id="headlines">Headlines</div></h2>
+        <div style="width:56%; height:400px; float: left; margin-right: 8px" class="div"><h2>Talking Animal Section</h2>
+            <div id="interview" style="padding-top:0px"></div>
+        </div>
+        <div style="width:37%; height:400px; float: left;" class="div" ><h2 style="margin-bottom: 38px">The Hottest Issue</h2>
+            <p><b>Most Discussed Issue: </b><div style="display: inline" id="mostDiscussed"></div></p><br><br>
+            <p><b>Most One Sided Issue: </b><div style="display: inline" id="mostOneSided"></div></p><br><br>
+            <p><b>Most Contested Issue: </b><div style="display: inline" id="mostContested"></div></p><br><br>
+            <p><b>Player 0 honor rating: </b><div style="display: inline" id="hrate0"></div></p><br><br>
+            <p><b>Player 1 honor rating: </b><div style="display: inline" id="hrate1"></div></p><br><br>
+        </div>
     </div>
     <div id="canvasDiv" class="div" style="width: 1000px; margin-right: 10px;">
     <canvas id="kingOfTheJungle" width="1000" height="800" >

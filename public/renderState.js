@@ -171,6 +171,23 @@ function updateWorld() {
                 showEndGameDialog();
                 return;
             }
+            console.log(World.state)
+            document.getElementById("headlines").innerText = World.state.headlines;
+            var interviewText = "";
+            for(var i = 0; i < World.state.interview.length; i++) {
+                interviewText += "<br>";
+                if(i % 2 == 0)
+                    interviewText += "<b>"+ World.state.interview[i] + "</b>";
+                else
+                    interviewText += World.state.interview[i];
+                interviewText += "<br>";
+            }
+            document.getElementById("mostDiscussed").innerText = World.state.stats.mostDiscussed;
+            document.getElementById("mostOneSided").innerText = World.state.stats.mostOneSided;
+            document.getElementById("mostContested").innerText = World.state.stats.mostContested;
+            document.getElementById("hrate0").innerText = World.state.stats.candidateOneHonor;
+            document.getElementById("hrate1").innerText = World.state.stats.candidateTwoHonor;
+            document.getElementById("interview").innerHTML = interviewText;
             showDialog();
             document.getElementById("updateButton").disabled = false;
             document.getElementById("updateButton").innerText = "Update World";

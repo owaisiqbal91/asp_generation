@@ -16,7 +16,23 @@ function resetState() {
         issues: [],
         players: [],
         candidateOpinions: [],
-        playersReadyCount: 0
+        playersReadyCount: 0,
+        headlines: "Player 0 moves into the lead with a strong 95% approval rating while player 1 lags behind by a small margin of 7%.",
+        interview: [
+            "Hi. Tell us a little bit about yourself?", 
+            "My name is Frog1. I'm from the grasslands of location 1.",
+            "That's awesome! What do you think about watersupply?", 
+            "I'm strongly for the issue of watersupply. I talked to zebra1 today and he further convinced me to be for this issue.",
+            "What do you think of the current candidates?", "I think the current candidates are very closely tied. I wish they were more for a particular issue.",
+            "Thanks for your time. Have a good night!"
+        ],
+        stats: {
+            mostDiscussed: "Water Supply",
+            mostOneSided: "Education",
+            mostContested: "Water Supply",
+            candidateOneHonor: 0.9,
+            candidateTwoHonor: 0.3
+        }
     };
 }
 
@@ -55,7 +71,10 @@ function friendlinessCallback(animalId, friendlinessScore) {
 function opinionCallback(animalId, issue, score) {
     if(score > state.score.max) score = state.score.max;
     else if(score < state.score.min) score = state.score.min;
-    state.animals[animalId].opinions[issue] = score;
+    if(state.animals[animalId].opinions[issue] == undefined)
+        state.animals[animalId].opinions[issue] = { score: score };
+    state.animals[animalId].opinions[issue].delta = state.animals[animalId].opinions[issue].score - score;
+    state.animals[animalId].opinions[issue].score = score;
 }
 
 //atLocation(animalId, locationId).
@@ -138,7 +157,7 @@ function createASPFacts() {
         aspFacts.push(clingo.createASPFact("influential", [animalId, state.animals[animalId].stats.influential], false))
         aspFacts.push(clingo.createASPFact("impressionable", [animalId, state.animals[animalId].stats.impressionable], false))
         Object.keys(state.animals[animalId].opinions).forEach(function(issue) {
-            aspFacts.push(clingo.createASPFact("opinion", [animalId, issue, state.animals[animalId].opinions[issue]]));
+            aspFacts.push(clingo.createASPFact("opinion", [animalId, issue, state.animals[animalId].opinions[issue].score]));
         });
     });
     Object.keys(state.map).forEach(function(locationId) {
@@ -156,7 +175,7 @@ function calculateApprovalRatings() {
         var aTotal = 0;
         for(var animal in Object.keys(state.animals)){
             for(var issue in state.animals[animal].opinions){
-                var opinion = state.animals[animal].opinions[issue];
+                var opinion = state.animals[animal].opinions[issue].score;
                 aTotal += Math.abs(opinion - state.candidateOpinions[player][issue]);
             }
         }
@@ -165,6 +184,17 @@ function calculateApprovalRatings() {
     }
 
     return approvalRatings;
+}
+
+function createHeadlines(newRatings) {
+    if(state.approvalRatings) {
+
+    }
+    var deltas = {};
+    Object.keys(newRatings).forEach(function(player) {
+        deltas[player] = {};
+        deltas[player].delta = state.approvalRatings == undefined? newRatings[player]: newRatings[player] - state.approvalRatings[player];
+    });
 }
 
 
@@ -209,6 +239,7 @@ app.post('/update', function(req, res) {
         clingo.writeFactsToFile('temp.lp', stateFacts);
         clingo.solve(['temp.lp', 'update_models.lp'], true, function() {
             var approvalRatings = calculateApprovalRatings();
+            var headlines = createHeadlines(approvalRatings);
             state.approvalRatings = approvalRatings;
             state.tick = clingo.tick;
             state.playersReadyCount = 0;
