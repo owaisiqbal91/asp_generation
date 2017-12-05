@@ -211,8 +211,8 @@ function createHeadlines(newRatings) {
         oldLeader = players.reduce(function(a, b) { return state.approvalRatings[a] > state.approvalRatings[b]? a : b});
         oldRunnerUp = players.reduce(function(a, b) { return state.approvalRatings[a] <= state.approvalRatings[b]? a : b});         
     } else {
-        return "Player " + newLeader + " starts off campaign with a " + "strong " + leaderScore + "% approval rating." + " Player " + newRunnerUp + " in " +
-            "with an " + " underwhelming " + runnerUpScore + "%.";
+        return "Player " + newLeader + " starts off campaign with a " + "strong " + leaderScore + "% approval rating." + " Player " + newRunnerUp + " came in " +
+            "with an " + runnerUpScore + "%.";
     }
 
     var deltas = {};
@@ -244,9 +244,9 @@ function createInterview() {
     var opponent = candidate == 0? 1: 0;
     var q1 = "Hello! " + "Can you tell us a little about yourself?";
     var a1 = "Hey! " + "My name is " + state.animals[animalId].name + " the " + state.animals[animalId].species + ". " +
-        "I am from the " + state.map[state.animals[animalId].location].terrain + " of " + state.animals[animalId].location + "." 
+        "I am from the " + state.map[state.animals[animalId].location].terrain + "."; 
     var q2 = "That's awesome! " + "What do you think about " + issue + "?";
-    var a2 = "I am " + "strongly in favor " + "spending more on " + issue + ". ";
+    var a2 = "I am " + "strongly in favor of " + "spending more on " + issue + ". ";
     if(state.animals[animalId].conversation[issue] != undefined) {
         var otherAnimals = Array.from(state.animals[animalId].conversation[issue]);
         var otherAnimalsWithNames = otherAnimals.map(a => state.animals[a].name + " the " + state.animals[a].species)

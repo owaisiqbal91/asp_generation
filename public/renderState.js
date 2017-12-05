@@ -166,6 +166,7 @@ function updateWorld() {
         if(response != undefined && response.tick != World.state.tick) {
             clearInterval(intervalId);
             World.state = response;
+            console.log(World.state);
             render();
             if((World.state.tick - 1) == 5) {
                 var winner = World.state.votes[0] > World.state.votes[1]? 0: 1;
@@ -193,11 +194,14 @@ function updateWorld() {
             var a0 = World.state.stats.candidateHonor[0];
             var a1 = World.state.stats.candidateHonor[1];
             if(a0 == a1) {
-                a0 = a1 = "50%";
+                a0 = "50%";
+                a1 = "50%";
             } else {
                 var t = a0 + a1;
-                a1 = Math.round(a0 * (100.0)/ t) + "%";
-                a0 = Math.round(a1 * (100.0)/ t) + "%";
+                var t2;
+                t2 = Math.round((a0 * (100.0))/ t) + "%";
+                a0 = Math.round((a1 * (100.0))/ t) + "%";
+                a1 = t2;
             }
             document.getElementById("hrate0").innerText = a0;
             document.getElementById("hrate1").innerText = a1;
