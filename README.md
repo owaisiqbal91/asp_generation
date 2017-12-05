@@ -1,11 +1,10 @@
-# asp_generation
-A Framework for Combining Imperative Programming and ASP
+# A Framework for Combining Imperative Programming and ASP
 
 ## Github repo
 https://github.com/owaisiqbal91/asp_generation
 
 ## Authors
-Akshay Arlikatti, Owais
+Akshay Arlikatti, Owais Iqbal
 
 ## Setup
 Install ('npm install') the following packages:
