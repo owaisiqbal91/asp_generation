@@ -8,8 +8,11 @@ Akshay Arlikatti, Owais Iqbal
 
 ## Setup
 Install ('npm install') the following packages:
+
 body-parser
+
 clingojs
+
 express
 
 Start the game server using the command 'node gameserver.js'
