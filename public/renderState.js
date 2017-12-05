@@ -168,6 +168,11 @@ function updateWorld() {
             World.state = response;
             render();
             if((World.state.tick - 1) == 5) {
+                var winner = World.state.votes[0] > World.state.votes[1]? 0: 1;
+                var loser = World.state.votes[0] > World.state.votes[1]? 1: 0;
+                document.getElementById("resultshead").innerText = "Player " + winner + " Wins!!!";
+                document.getElementById("resultsbody").innerText = "Player " + winner + " wins by " + (World.state.votes[winner] - World.state.votes[loser]) + " votes! ("
+                    + World.state.votes[winner] + " vs " + World.state.votes[loser] + ")"; 
                 showEndGameDialog();
                 return;
             }
@@ -181,6 +186,7 @@ function updateWorld() {
                     interviewText += World.state.interview[i];
                 interviewText += "<br>";
             }
+            document.getElementById("dialog").title = "Day " + (World.state.tick - 1);
             document.getElementById("mostDiscussed").innerText = World.state.stats.mostDiscussed;
             document.getElementById("mostOneSided").innerText = World.state.stats.mostOneSided;
             document.getElementById("mostContested").innerText = World.state.stats.mostContested;
@@ -190,8 +196,8 @@ function updateWorld() {
                 a0 = a1 = "50%";
             } else {
                 var t = a0 + a1;
-                a0 = Math.round(a0 * (100.0)/ t) + "%";
-                a1 = Math.round(a1 * (100.0)/ t) + "%";
+                a1 = Math.round(a0 * (100.0)/ t) + "%";
+                a0 = Math.round(a1 * (100.0)/ t) + "%";
             }
             document.getElementById("hrate0").innerText = a0;
             document.getElementById("hrate1").innerText = a1;

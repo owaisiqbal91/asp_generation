@@ -128,7 +128,7 @@ function talkCallback(animalX, animalY, issue) {
     if(state.animals[animalY].conversation[issue] == undefined)
         state.animals[animalY].conversation[issue] = new Set();
     state.animals[animalY].conversation[issue].add(animalX);
-    console.log("Talk: " + animalX + " " + animalY + " " + issue);
+    //console.log("Talk: " + animalX + " " + animalY + " " + issue);
 }
 
 var ASPParseCallbacks = {
@@ -225,12 +225,12 @@ function createHeadlines(newRatings) {
         //Change in leader in approval ratings
         return "Player " + newLeader + " moves into the lead with a " + "strong " + leaderScore + "% approval rating while player " + 
             newRunnerUp + " lags behind by a " + "small " + "margin of " + (leaderScore - runnerUpScore) + "%.";
-    } else if(deltas[newRunnerUp] >= deltas[newLeader]) {
+    } else if(deltas[newRunnerUp] > deltas[newLeader]) {
         //Runner up is catching up
         return "The battle is intense as " + " player " + newRunnerUp + " catches up. " + " Now " + (leaderScore - runnerUpScore) + "% behind in approvals.";
     } else {
         //Winner is pulling away
-        return "Player " + newLeader + "extends lead " + " with a " + leaderScore + "% approval rating.";
+        return "Player " + newLeader + " extends lead " + " with a " + leaderScore + "% approval rating.";
     }
 }
 
@@ -327,6 +327,31 @@ function createStats(newRatings) {
     state.stats.mostOneSided = minVarianceIssue;
 }
 
+
+function calcualteVotes() {
+    var votes = [0, 0];
+    for(var animal in Object.keys(state.animals)) {
+        var scores = [0, 0];
+        for(var issue in state.animals[animal].opinions) {
+            var opinion = state.animals[animal].opinions[issue].score;
+            scores[0] += Math.abs(opinion - state.candidateOpinions[0][issue]);
+            scores[1] += Math.abs(opinion - state.candidateOpinions[1][issue]);
+        }
+        if(scores[0] == scores[1]) {
+            if(state.stats.candidateHonor[0] > state.stats.candidateHonor[1]) {
+                votes[1]++;
+            } else {
+                votes[0]++;
+            }
+        } else if(scores[0] >= scores[1]) {
+            votes[1]++;
+        } else {
+            votes[0]++;
+        }
+    }
+    return votes;
+}
+
 //GAME ROUTES
 
 var clingo = new clingoFramework(
@@ -380,6 +405,7 @@ app.post('/update', function(req, res) {
             state.headlines = headlines;
             var interview = createInterview();
             state.interview = interview;
+            state.votes = calcualteVotes();
             state.tick = clingo.tick;
             state.playersReadyCount = 0;
             res.json({});
